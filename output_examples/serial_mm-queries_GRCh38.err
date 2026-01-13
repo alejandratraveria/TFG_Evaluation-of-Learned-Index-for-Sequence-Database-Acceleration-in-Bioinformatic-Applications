@@ -1,0 +1,37 @@
+======================================== STARTING benchmark execution: SEEDING phase of genome analysis =======================================
+[CONFIG] Running with LISA_HASH (RMI)
+[CONFIG] Vectorization: ENABLED
+Available AVX512 mode!!
+[CONFIG] Prefetching: ENABLED
+[CONFIG] Batching: ENABLED
+[minimizers_output.csv] File deleted successfully
+[REFERENCE]: GRCh38_noN.fna.mmi
+[INFO] '/gpfs/scratch/bsc18/bsc278986/Paper_datasets/GRCh38_noN.fna.mmi' is a prebuilt index
+[INFO - Index] -------------------------------------------------------------------------------------------------------------------------------
+Index opened successfully: /gpfs/scratch/bsc18/bsc278986/Paper_datasets/GRCh38_noN.fna.mmi
+[M::mm_idx_reader_read] loading prebuilt index...
+Index read successfully: /gpfs/scratch/bsc18/bsc278986/Paper_datasets/GRCh38_noN.fna.mmi
+[M::main::1758276183.698*0.00] loaded/built the index for 705 target sequence(s)
+[M::mm_idx_stat] kmer size: 20; skip: 10; is_hpc: 0; #seq: 705
+[M::mm_idx_stat::1758276185.962*0.00] distinct minimizers: 406203649 (90.89% are singletons); average occurrences: 1.805; average spacing: 4.500; total length: 3298430636
+Using LISA_HASH..
+Loading from file /gpfs/scratch/bsc18/bsc278986/Paper_datasets/GRCh38_noN.fna_map-ont_minimizers_key_value_sorted
+Memory allocated 733017025 
+Num_keys: 406203649, num_values = 733017025
+Loading from bin
+n = 406203649, L0_PARAMETER0 = -4.543493E-03, L0_PARAMETER1 = 1.238009E-05, L1_SIZE = 12693864
+Loading done.
+[INFO - Queries] -----------------------------------------------------------------------------------------------------------------------------
+Extracting minimizers from file: /gpfs/scratch/bsc18/bsc278986/Paper_datasets/trim_queries_1000bp_K20_2000000_SRR23704822_1_ONT.fastq
+Extracted 355686367 minimizers from 2000000 sequences
+Minimizers keys stored successfully.
+Successfully processed 2000000 sequences
+[INFO - Seeding] -----------------------------------------------------------------------------------------------------------------------------
+Looking up minimizers in the index...
+Found 164072906 matching minimizers
+Execution completed. Resources released successfully.
+[INFO - Execution times] ---------------------------------------------------------------------------------------------------------------------
+Index loading/building time: 26.802524 sec
+Minimizer extraction time: 388.445438 sec
+Seeding time (lookup minimizers in the index): 110.716362 sec
+Total execution time application: 526.500463 sec

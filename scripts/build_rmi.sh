@@ -1,0 +1,47 @@
+#
+#
+# The MIT License
+#
+#Copyright (c) 2018-     Dana-Farber Cancer Institute
+#              2017-2018 Broad Institute, Inc.
+#
+#Permission is hereby granted, free of charge, to any person obtaining
+#a copy of this software and associated documentation files (the
+#"Software"), to deal in the Software without restriction, including
+#without limitation the rights to use, copy, modify, merge, publish,
+#distribute, sublicense, and/or sell copies of the Software, and to
+#permit persons to whom the Software is furnished to do so, subject to
+#the following conditions:
+#
+#The above copyright notice and this permission notice shall be
+#included in all copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+#EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+#MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+#NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+#BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+#ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+#CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
+#Modified Copyright (C) 2021 Intel Corporation
+#   Contacts: Saurabh Kalikar <saurabh.kalikar@intel.com>; 
+#	Vasimuddin Md <vasimuddin.md@intel.com>; Sanchit Misra <sanchit.misra@intel.com>; 
+#	Chirag Jain <chirag@iisc.ac.in>; Heng Li <hli@jimmy.harvard.edu>
+#
+
+make -f LISAHash_Makefile clean 
+make -f LISAHash_Makefile bench_mm_queries lhash_index=1 vect=1 pref=1 batch=1 key_type=uint64 metrics=0 mm_info=0
+
+#installation steps for rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+. "$HOME/.cargo/env"
+export PATH=$HOME/.cargo/bin:$PATH
+
+#install cargo dependancies
+cd ./ext/build-rmi/learned-systems-rmi
+cargo build --release
+
+cd ../../../
+make -f LISAHash_Makefile lisa_hash vect=1 pref=1 batch=1 key_type=uint64 metrics=0 mm_info=0
+

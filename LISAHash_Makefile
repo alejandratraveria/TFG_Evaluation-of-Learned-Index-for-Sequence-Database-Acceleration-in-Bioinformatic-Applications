@@ -1,0 +1,246 @@
+##/*************************************************************************************
+##                           The MIT License
+##
+##   Copyright (C) 2020 Intel Labs.
+##
+##   Permission is hereby granted, free of charge, to any person obtaining a copy
+##   of this software and associated documentation files (the "Software"), to deal
+##   in the Software without restriction, including without limitation the rights
+##   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+##   copies of the Software, and to permit persons to whom the Software is
+##   furnished to do so, subject to the following conditions:
+##
+##   The above copyright notice and this permission notice shall be included in all
+##   copies or substantial portions of the Software.
+##   
+##   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+##   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+##   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+##   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+##   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+##   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+##   SOFTWARE.
+##
+##Contacts: Sanchit Misra <sanchit.misra@intel.com>; Vasimuddin Md <vasimuddin.md@intel.com>
+##		Saurabh Kalikar <saurabh.kalikar@intel.com>
+##*****************************************************************************************/
+
+# Custom macros
+ifeq ($(metrics), 1)
+	PRINT_COLLECT_METRICS=-DCOLLECT_METRICS
+endif
+ifeq ($(mm_info), 1)
+	PRINT_COLLECT_MMINFO=-DCOLLECT_MMINFO
+endif
+ifeq ($(vect), 1)	
+	EN_VECTORIZE=-DVECTORIZE
+endif
+ifeq ($(pref), 1)	
+	EN_PREFETCH=-DENABLE_PREFETCH
+endif
+ifeq ($(batch), 1)	
+	EN_BATCHING=-DENABLE_BATCHING
+endif
+ifeq ($(key_type),f64)
+	KEY_TYPE=-DF64
+else
+	KEY_TYPE=-DUINT64
+endif
+ifeq ($(topdown), 1)
+	PRINT_TOPDOWN=-DTOPDOWN
+endif
+
+BENCH_SMITH_WATERMAN=	bench-smith-waterman
+BUILD_INDEX_FOR_ONLY= build-index-forward-only
+BUILD_INDEX_WITH_RC= build-index-with-rev-complement
+BENCH_SMEM=	bench-smem
+BENCH_FIXED_LEN_E2E=	bench-fixed-len-e2e-match
+#CXX=		icpc
+ifeq ($(CXX), icpc)
+    CC= icc
+else ifeq ($(CXX), g++)
+	CC=gcc
+endif
+
+ARCH_FLAGS=	-msse4.1
+#ARCH_FLAGS=	-mavx512bw
+MEM_FLAGS=	-DSAIS=1
+CPPFLAGS=	$(EN_PREFETCH) $(MEM_FLAGS) -DKSW=1 -DTAL_BENCHMARK -DPAR_ENC_
+INCLUDES=   -Iext/hash-libs -Iext/safestringlib/include -Isrc/FMI/ -Isrc/alignment/Smith-Waterman/
+LIBS=		-fopenmp -lm -L. -ltal -Lext/safestringlib/ -lsafestring -lz
+OBJS=		ext/hash-libs/utils.o \
+			ext/hash-libs/kstring.o ext/hash-libs/bntseq.o \
+			src/alignment/Smith-Waterman/PairWiseSW.o \
+			src/alignment/Smith-Waterman/PairWiseSW_32.o \
+			src/alignment/Smith-Waterman/PairWiseSW_16.o \
+			src/alignment/Smith-Waterman/PairWiseSW_8.o \
+			src/FMI/FMI_search.o ext/hash-libs/bseq.o 
+TAL_LIB=    libtal.a
+SAFE_STR_LIB=    ext/safestringlib/libsafestring.a
+
+ifeq ($(arch),sse)
+		ARCH_FLAGS=-msse4.1
+else ifeq ($(arch),avx2)
+	ifeq ($(CXX), icpc)
+		ARCH_FLAGS=-march=core-avx2 #-xCORE-AVX2
+	else	
+		ARCH_FLAGS=-mavx2
+	endif
+else ifeq ($(arch),avx512)
+	ifeq ($(CXX), icpc)
+		ARCH_FLAGS=-xCORE-AVX512
+	else	
+		ARCH_FLAGS=-mavx512bw
+	endif
+else ifeq ($(arch),native)
+	ARCH_FLAGS=-march=native
+else ifneq ($(arch),)
+## To provide a different architecture flag like -march=core-avx2.
+	ARCH_FLAGS=$(arch)
+endif
+
+#CXXFLAGS=	-g -O3 -fpermissive $(ARCH_FLAGS) #-Wall ##-xSSE2
+CXXFLAGS=	-g -O3 -fopenmp -march=x86-64 -mno-avx -mno-avx2 -mno-avx512f #$(ARCH_FLAGS)
+
+
+
+#.PHONY:all clean depend
+.PHONY:all clean depend
+#.PHONY:all clean
+.SUFFIXES:.cpp .o
+
+.cpp.o:
+	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $(INCLUDES) $< -o $@
+
+all:$(BENCH_SMITH_WATERMAN) $(BUILD_INDEX_FOR_ONLY) $(BUILD_INDEX_WITH_RC) $(BENCH_SMEM) $(BENCH_FIXED_LEN_E2E) lisa
+
+$(BENCH_SMITH_WATERMAN):$(TAL_LIB) $(SAFE_STR_LIB) benchmarks/bench-smith-waterman.o
+	$(CXX) $(CXXFLAGS) benchmarks/bench-smith-waterman.o $(LIBS) -o $@
+
+$(BUILD_INDEX_FOR_ONLY):$(TAL_LIB) $(SAFE_STR_LIB) benchmarks/build-index-forward-only.o
+	$(CXX) $(CXXFLAGS) benchmarks/build-index-forward-only.o $(LIBS) -o $@
+
+$(BUILD_INDEX_WITH_RC):$(TAL_LIB) $(SAFE_STR_LIB) benchmarks/build-index-with-rev-complement.o
+	$(CXX) $(CXXFLAGS) benchmarks/build-index-with-rev-complement.o $(LIBS) -o $@
+
+$(BENCH_SMEM):$(TAL_LIB) $(SAFE_STR_LIB) benchmarks/bench-smem.o
+	$(CXX) $(CXXFLAGS) benchmarks/bench-smem.o $(LIBS) -o $@
+
+$(BENCH_FIXED_LEN_E2E):$(TAL_LIB) $(SAFE_STR_LIB) benchmarks/bench-fixed-len-e2e-match.o
+	$(CXX) $(CXXFLAGS) benchmarks/bench-fixed-len-e2e-match.o $(LIBS) -o $@
+
+$(TAL_LIB):$(OBJS)
+	ar rcs $(TAL_LIB) $(OBJS)
+
+$(SAFE_STR_LIB):
+	cd ext/safestringlib/ && make clean && make CC=$(CC) directories libsafestring.a
+
+clean:
+	rm -fr ./*.exe ./*.o src/FMI/*.o src/LISA-FMI/*.o src/*.o ext/*.o ext/hash-libs/*.o benchmarks/*.o build-lisa-hash-index bench-dp-chaining $(TAL_LIB) $(BENCH_SMITH_WATERMAN) $(BUILD_INDEX_FOR_ONLY) $(BUILD_INDEX_WITH_RC) $(BENCH_SMEM) $(BENCH_FIXED_LEN_E2E)
+	cd ext/safestringlib && make CC=$(CC) clean
+
+depend:
+	(LC_ALL=C; export LC_ALL; makedepend -Y -- $(CXXFLAGS) $(CPPFLAGS) -I. -- src/*.cpp)
+
+
+#LISA hash
+#lisa_hash: ./benchmarks/build-lisa-hash-index.cpp  ./src/LISA-hash/lisa_hash.h 
+#$(CXX) ./benchmarks/build-lisa-hash-index.cpp -o build-lisa-hash-index -Ofast -DVECTORIZE ${KEY_TYPE} -I./src/LISA-hash -march=native
+
+#Dynamic programming based chaining benchmark
+#dp_chain: ./benchmarks/bench-dp-chaining.cpp ./src/dynamic-programming/parallel_chaining_32_bit.h
+#	$(CXX) ./benchmarks/bench-dp-chaining.cpp -I src/dynamic-programming/ -Ofast -o bench-dp-chaining -march=native -DDEBUG
+
+
+# LISA search compilation
+HP= -DNO_HUGE_PAGE
+ifeq ($(huge_page), 1)
+	HP= -DHUGE_PAGE
+endif
+HP= -DHUGE_PAGE_
+# To use valgrind:
+# LISA_CC = g++ -g  
+# LISA_CFLAGS = -DHAVE_KALLOC -DSAIS=1 -std=c++17 -Ofast -fopenmp -Wall -Wshadow -Wno-char-subscripts -lz -march=x86-64 -mno-avx -mno-avx2 -mno-avx512f
+
+LISA_CC =  $(CXX)
+LISA_CFLAGS = -DHAVE_KALLOC -DSAIS=1 -std=c++17 -march=native -Ofast -fopenmp -Wall -Wshadow -Wno-char-subscripts -lz
+
+ifeq ($(lhash_index), 1)	
+	LISA_CFLAGS+=	-DLISA_INDEX 
+endif
+
+ifeq ($(lhash), 1)	
+	EN_LISA_HASH=-DLISA_HASH
+endif
+
+LISA_MACROS = -DOUTPUT $(PRINT_COLLECT_METRICS) $(PRINT_COLLECT_MMINFO) $(PRINT_TOPDOWN) -DNO_DNA_ORD $(EN_LISA_HASH) $(EN_VECTORIZE) $(EN_PREFETCH) $(EN_BATCHING) -DLINEAR_ONLY_ -DTAL_BENCHMARK -DPAR_ENC_ ${KEY_TYPE}
+
+LISA_INCLUDE = -I ./src/LISA-FMI/ -I ./ext/ -I ./ext/safestringlib/include/ -I ./src/FMI/ -I ./src/LISA-hash -I ./metrics
+LISA_HASH_INCLUDE = -I ./ext/hash-libs/ -I ./ext/safestringlib/include/ -I ./src/LISA-hash-benchmarks/ -I ./src/LISA-hash -I ./metrics
+LISA_LDLIBS = -lz -L. -ltal -L ./ext/safestringlib/ -lsafestring
+
+OBJ_CPP =  ./src/LISA-FMI/*.cpp ./metrics/*.c
+OBJ_HASH_CPP = ./LISA-hash-benchmarks/*.cpp
+
+VTUNE = -DVTUNE_ANALYSIS -I/swtools/intel/vtune_amplifier/include/ -littnotify -L/swtools/intel/vtune_amplifier/lib64/ 
+
+#lisa: smem-lisa exact-search-lisa build-index-forward-only-lisa build-index-with-rev-complement-lisa exact-search-lisa-multi-chunk
+lisa: build-index-forward-only-lisa
+
+smem-lisa: ./benchmarks/bench-smem-lisa.cpp
+	${LISA_CC} ${LISA_CFLAGS} ${LISA_MACROS} ${HP} -DREV_COMP ${LISA_INCLUDE} ${OBJ_CPP}  ./benchmarks/bench-smem-lisa.cpp  ${LISA_LDLIBS} -DPRINT_OUTPUT -o smem-lisa.o
+
+
+exact-search-lisa: ./benchmarks/bench-fixed-len-e2e-match-lisa.cpp
+	${LISA_CC} ${LISA_CFLAGS} ${LISA_MACROS} ${HP} ${LISA_INCLUDE} ${OBJ_CPP} ./benchmarks/bench-fixed-len-e2e-match-lisa.cpp ${LISA_LDLIBS} -DPRINT_OUTPUT -o exact-search-lisa.o 
+
+exact-search-lisa-multi-chunk: ./benchmarks/bench-fixed-len-e2e-match-lisa-multi-chunk.cpp
+	${LISA_CC} ${LISA_CFLAGS} ${LISA_MACROS} ${HP} ${LISA_INCLUDE} ${OBJ_CPP} ./benchmarks/bench-fixed-len-e2e-match-lisa-multi-chunk.cpp ${LISA_LDLIBS} -DPRINT_OUTPUT -o exact-search-lisa-multi-chunk
+
+
+build-index-forward-only-lisa: ./benchmarks/build-lisa-index.cpp
+	${LISA_CC} ${LISA_CFLAGS} ${LISA_MACROS} ${LISA_INCLUDE} ${OBJ_CPP} ./benchmarks/build-lisa-index.cpp ${LISA_LDLIBS} -o build-index-forward-only-lisa.o
+
+build-index-with-rev-complement-lisa: ./benchmarks/build-lisa-index.cpp
+	${LISA_CC} ${LISA_CFLAGS} ${LISA_MACROS} -DREV_COMP ${LISA_INCLUDE} ${OBJ_CPP} ./benchmarks/build-lisa-index.cpp ${LISA_LDLIBS} -o build-index-with-rev-complement-lisa.o
+
+lisa_hash: ./benchmarks/build-lisa-hash-index.cpp 
+	${LISA_CC} ${LISA_CFLAGS} ${LISA_MACROS} ${HP} ${OBJ_CPP} ${LISA_INCLUDE} ./benchmarks/build-lisa-hash-index.cpp -o build-lisa-hash-index.exe
+
+# LISA-hash seeding benchmark
+bench_mm_queries: ./LISA-hash-benchmarks/bench-lisa-hash-mm-queries.cpp metrics/metrics.c ext/hash-libs/easyperf.c ext/hash-libs/perf_profiler.c
+	${LISA_CC} ${LISA_CFLAGS} ${LISA_MACROS} ${HP} ${LISA_HASH_INCLUDE} ./LISA-hash-benchmarks/bench-lisa-hash-mm-queries.cpp metrics/metrics.c ext/hash-libs/easyperf.c ext/hash-libs/perf_profiler.c -o bench-mm-queries.exe
+
+# DO NOT DELETE
+
+src/alignment/Smith-Waterman/PairWiseSW.o: src/alignment/Smith-Waterman/PairWiseSW.h
+src/alignment/Smith-Waterman/PairWiseSW_32.o: src/alignment/Smith-Waterman/PairWiseSW_32.h
+src/alignment/Smith-Waterman/PairWiseSW_32.o: src/alignment/Smith-Waterman/PairWiseSW.h
+src/alignment/Smith-Waterman/PairWiseSW_16.o: src/alignment/Smith-Waterman/PairWiseSW_16.h
+src/alignment/Smith-Waterman/PairWiseSW_16.o: src/alignment/Smith-Waterman/PairWiseSW.h
+src/alignment/Smith-Waterman/PairWiseSW_8.o: src/alignment/Smith-Waterman/PairWiseSW_8.h
+src/alignment/Smith-Waterman/PairWiseSW_8.o: src/alignment/Smith-Waterman/PairWiseSW.h
+src/FMI/FMI_search.o: src/FMI/FMI_search.h ext/hash-libs/bntseq.h
+src/FMI/FMI_search.o: ext/hash-libs/utils.h  ext/hash-libs/sais.h
+ext/hash-libs/bntseq.o: ext/hash-libs/bntseq.h ext/hash-libs/utils.h ext/hash-libs/kseq.h
+#ext/bwa.o: ext/bntseq.h ext/bwa.h ext/utils.h
+#ext/bwa.o: ext/kstring.h ext/kseq.h
+ext/hash-libs/kstring.o: ext/hash-libs/kstring.h
+ext/hash-libs/utils.o: ext/hash-libs/utils.h ext/hash-libs/kseq.h
+ext/hash-libs/bseq.o: ext/hash-libs/bseq.h ext/hash-libs/utils.h ext/hash-libs/kseq.h
+benchmarks/bench-smith-waterman.o: src/alignment/Smith-Waterman/PairWiseSW.h
+benchmarks/bench-smith-waterman.o: src/alignment/Smith-Waterman/PairWiseSW_32.h
+benchmarks/bench-smith-waterman.o: src/alignment/Smith-Waterman/PairWiseSW_16.h
+benchmarks/bench-smith-waterman.o: src/alignment/Smith-Waterman/PairWiseSW_8.h
+benchmarks/bench-smem.o: src/FMI/FMI_search.h ext/hash-libs/bntseq.h ext/hash-libs/utils.h
+benchmarks/bench-smem.o:  ext/hash-libs/sais.h
+benchmarks/bench-fixed-len-e2e-match.o: src/FMI/FMI_search.h ext/hash-libs/bntseq.h ext/hash-libs/utils.h
+benchmarks/bench-fixed-len-e2e-match.o:  ext/hash-libs/sais.h
+
+
+#LISA_MACROS = -DOUTPUT $(PRINT_COLLECT_METRICS) $(PRINT_COLLECT_MMINFO) -DNO_DNA_ORD -DVECTORIZE -DENABLE_PREFETCH  -DLINEAR_ONLY_ -DTAL_BENCHMARK -DPAR_ENC_
+#LISA_INCLUDE = -I ./src/LISA-FMI/ -I ./ext/ -I ./ext/safestringlib/include/ -I ./src/FMI/ -I ./src/LISA-hash -I ./src/chaining -I src/LISA-hash/minimap/metrics -I ./src/LISA-hash/minimap
+#OBJ_CPP =  ./src/LISA-FMI/*.cpp src/LISA-hash/minimap/metrics/*.c ./src/LISA-hash/minimap/*.c
+#OBJ_HASH_CPP = ./metrics/*.c 
+#mm_queries: ./benchmarks/bench-lisa-hash-mm-queries.cpp
+#	${LISA_CC} ${LISA_CFLAGS} ${LISA_MACROS} ${OBJ_HASH_CPP} ${LISA_HASH_INCLUDE} ./benchmarks/bench-lisa-hash-mm-queries.cpp ${LISA_LDLIBS} -o mm_queries.exe

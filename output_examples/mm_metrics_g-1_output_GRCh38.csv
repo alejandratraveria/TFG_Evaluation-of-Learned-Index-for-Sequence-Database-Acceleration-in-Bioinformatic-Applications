@@ -1,0 +1,68 @@
+[M::print_metrics_results] Metrics results:
+Num_threads,1
+Used threads,1
+
+Number of final accesses to the index,355686367
+Total number of accesses to the index,830412746
+
+Total number of accesses without range adjustments,15491500
+Total number of accesses with 1 range adjustment,206598118
+Total number of accesses with 2 range adjustments,132662182
+Total number of accesses with 3 range adjustments,934468
+Total number of accesses with 4 range adjustments,9
+Total number of accesses with 5 range adjustments,0
+Total number of accesses with 6 range adjustments,90
+Total number of accesses with 7 range adjustments,0
+Total number of accesses with 8 range adjustments,0
+Total number of accesses with more than 8 range adjustments,0
+
+Total number of exact matches,25936133039933
+Total number of minimizers,355686367
+Total number of minimizers matched,164072906
+
+[M::print_metrics_results] Profiling results:
+Number of cycles seeds lookup,0
+Number of instructions seeds lookup,0
+Loads in seeds lookup,0
+Stores in seeds lookup,0
+LLC references in seeds lookup,0
+LLC misses in seeds lookup,0
+Cache references in seeds lookup,0
+Cache misses in seeds lookup,0
+Branch instructions in seeds lookup,0
+Branch misses in seeds lookup,0
+Retired branch instructions,0
+Mispredicted branch instructions,0
+STLB load misses in seeds lookup,0
+STLB store misses in seeds lookup,0
+
+IPC,-nan
+LLC miss rate,-nan
+Cache miss rate,-nan
+Misprediction rate,-nan
+Retired misprediction rate,-nan
+
+[M::print_metrics_results] Topdown counters:
+Cycles,0
+Instructions,0
+Cache misses,0
+Slots,0
+Uops retired,0
+Backend slots,0
+Bad spec slots,0
+Memory slots,0
+
+Topdown metrics:
+Useful work,-nan
+Bad speculation,-nan
+Frontend bound,-nan
+Backend bound,-nan
+Memory bound,-nan
+Core bound,-nan
+
+
+[M::print_metrics_results] Execution times:
+Index loading/building time,26.802524
+Minimizer extraction time,388.445438
+Seeding time (lookup minimizers in the index),110.716362
+Total execution time application,526.500463

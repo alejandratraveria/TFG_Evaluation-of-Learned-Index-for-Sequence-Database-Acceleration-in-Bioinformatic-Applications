@@ -1,0 +1,66 @@
+[M::print_metrics_results] Metrics results:
+Num_threads,1
+Used threads,1
+
+Number of final accesses to the index,141090
+Total number of accesses to the index,255908
+
+Total number of collisions,114818
+Total number of accesses without collisions,93575
+Total number of accesses with 1 collision,22577
+Total number of accesses with 2 to 3 collisions,15684
+Total number of accesses with 4 to 7 collisions,7442
+Total number of accesses with 8 to 15 collisions,1725
+Total number of accesses with 16 to 31 collisions,87
+Total number of accesses with 32 or more collisions,0
+
+Total number of exact matches,1614424390
+Total number of minimizers,141090
+Total number of minimizers matched,141090
+
+[M::print_metrics_results] Profiling results:
+Number of cycles seeds lookup,206935062
+Number of instructions seeds lookup,476220891
+Loads in seeds lookup,93279330
+Stores in seeds lookup,56583470
+LLC references in seeds lookup,0
+LLC misses in seeds lookup,0
+Cache references in seeds lookup,0
+Cache misses in seeds lookup,0
+Branch instructions in seeds lookup,0
+Branch misses in seeds lookup,0
+Retired branch instructions,0
+Mispredicted branch instructions,0
+STLB load misses in seeds lookup,0
+STLB store misses in seeds lookup,0
+
+IPC,2.30
+LLC miss rate,-nan
+Cache miss rate,-nan
+Misprediction rate,-nan
+Retired misprediction rate,-nan
+
+[M::print_metrics_results] Topdown counters:
+Cycles,119514996
+Instructions,284392313
+Cache misses,275442
+Slots,743319000
+Uops retired,291576752
+Backend slots,381842430
+Bad spec slots,37429532
+Memory slots,304143648
+
+Topdown metrics:
+Useful work,39.226
+Bad speculation,5.035
+Frontend bound,4.368
+Backend bound,51.370
+Memory bound,40.917
+Core bound,10.453
+
+
+[M::print_metrics_results] Execution times:
+Index loading/building time,0.897167
+Minimizer extraction time,0.067304
+Seeding time (lookup minimizers in the index),0.069629
+Total execution time application,1.040676
